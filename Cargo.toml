@@ -1,0 +1,9 @@
+[package]
+name = "zip-merge"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = { version = "1.0.95" }
+clap = { version = "4.5.29", features = ["derive"] }
+zip = { version = "2.2.2" }
