@@ -1,5 +1,5 @@
-use std::ffi::OsString;
 use std::fs::File;
+use std::path::PathBuf;
 
 use clap::Parser;
 use zip_merge::ZipMerger;
@@ -9,9 +9,9 @@ use zip_merge::ZipMerger;
 #[command(propagate_version = true)]
 struct Cli {
     #[clap(short, long, value_name = "output", verbatim_doc_comment)]
-    output: OsString,
-    
-    files: Vec<OsString>,
+    output: PathBuf,
+
+    files: Vec<PathBuf>,
 }
 
 fn main() -> anyhow::Result<()> {
