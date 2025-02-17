@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::io::{self, Read, Seek, Write};
 use std::path::PathBuf;
 
-use zip::write::{ExtendedFileOptions, FileOptions};
+use zip::write::{ExtendedFileOptions, FileOptionExtension, FileOptions};
 use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
 type Result<T> = anyhow::Result<T>;
@@ -84,15 +84,22 @@ where
     }
 
     pub fn write<W: Write + Seek>(&mut self, dest: W) -> Result<()> {
-        let mut writer = ZipWriter::new(dest);
-
-        let opt: FileOptions<ExtendedFileOptions> = FileOptions::default()
+        let default_opt: FileOptions<ExtendedFileOptions> = FileOptions::default()
             .compression_method(CompressionMethod::Deflated)
             .unix_permissions(0o644);
+        self.write_with_option(dest, default_opt)
+    }
+
+    pub fn write_with_option<W: Write + Seek>(
+        &mut self,
+        dest: W,
+        option: FileOptions<impl FileOptionExtension + Clone>,
+    ) -> Result<()> {
+        let mut writer = ZipWriter::new(dest);
 
         log::info!("writing to the output archive");
         for (key, value) in self.files.iter() {
-            writer.start_file_from_path(key, opt.clone())?;
+            writer.start_file_from_path(key, option.clone())?;
 
             let index = (self.file_selector)(value);
             let archive = &mut self.archives[index.archive_index];
