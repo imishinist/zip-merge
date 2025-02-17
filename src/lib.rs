@@ -8,9 +8,9 @@ use zip::{CompressionMethod, ZipArchive, ZipWriter};
 type Result<T> = anyhow::Result<T>;
 
 #[derive(Debug, Copy, Clone)]
-struct Index {
-    archive_idx: usize,
-    file_idx: usize,
+pub struct Index {
+    pub archive_index: usize,
+    pub file_index: usize,
 }
 
 fn default_file_selector(indices: &[Index]) -> Index {
@@ -18,24 +18,41 @@ fn default_file_selector(indices: &[Index]) -> Index {
 
     indices
         .iter()
-        .max_by_key(|&index| index.archive_idx)
+        .max_by_key(|&index| index.archive_index)
         .unwrap()
         .clone()
 }
 
-pub struct ZipMerger<R> {
+pub struct ZipMerger<R, F> {
     archives: Vec<ZipArchive<R>>,
     files: BTreeMap<PathBuf, Vec<Index>>,
 
-    file_selector: fn(&[Index]) -> Index,
+    file_selector: F,
 }
 
-impl<R: Read + Seek> ZipMerger<R> {
+impl<R> ZipMerger<R, fn(&[Index]) -> Index>
+where
+    R: Read + Seek,
+{
     pub fn new() -> Self {
         ZipMerger {
             archives: Vec::new(),
             files: BTreeMap::new(),
             file_selector: default_file_selector,
+        }
+    }
+}
+
+impl<R, F> ZipMerger<R, F>
+where
+    R: Read + Seek,
+    F: Fn(&[Index]) -> Index,
+{
+    pub fn new_with_selector(file_selector: F) -> Self {
+        ZipMerger {
+            archives: Vec::new(),
+            files: BTreeMap::new(),
+            file_selector,
         }
     }
 
@@ -54,8 +71,8 @@ impl<R: Read + Seek> ZipMerger<R> {
                     file_idx
                 );
                 self.files.entry(path).or_insert_with(Vec::new).push(Index {
-                    archive_idx,
-                    file_idx,
+                    archive_index: archive_idx,
+                    file_index: file_idx,
                 });
             } else {
                 log::warn!("skipping file: {:?}, invalid name", file.name());
@@ -78,14 +95,14 @@ impl<R: Read + Seek> ZipMerger<R> {
             writer.start_file_from_path(key, opt.clone())?;
 
             let index = (self.file_selector)(value);
-            let archive = &mut self.archives[index.archive_idx];
-            let mut file = archive.by_index(index.file_idx)?;
+            let archive = &mut self.archives[index.archive_index];
+            let mut file = archive.by_index(index.file_index)?;
 
             log::debug!(
                 "copying file: {:?} from archive#{} file#{}",
                 key,
-                index.archive_idx,
-                index.file_idx
+                index.archive_index,
+                index.file_index
             );
             io::copy(&mut file, &mut writer)?;
         }
