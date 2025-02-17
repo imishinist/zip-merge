@@ -24,8 +24,8 @@ fn main() -> anyhow::Result<()> {
         merger.add(file)?;
     }
 
-    let file = File::create(args.output)?;
-    merger.write(file)?;
+    let mut file = File::create(args.output)?;
+    merger.write(&mut file)?;
 
     Ok(())
 }

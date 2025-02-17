@@ -83,7 +83,7 @@ where
         Ok(())
     }
 
-    pub fn write<W: Write + Seek>(&mut self, dest: W) -> Result<()> {
+    pub fn write<W: Write + Seek>(&mut self, dest: &mut W) -> Result<()> {
         let default_opt: FileOptions<ExtendedFileOptions> = FileOptions::default()
             .compression_method(CompressionMethod::Deflated)
             .unix_permissions(0o644);
@@ -92,7 +92,7 @@ where
 
     pub fn write_with_option<W: Write + Seek>(
         &mut self,
-        dest: W,
+        dest: &mut W,
         option: FileOptions<impl FileOptionExtension + Clone>,
     ) -> Result<()> {
         let mut writer = ZipWriter::new(dest);
