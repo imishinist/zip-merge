@@ -15,6 +15,7 @@ struct Cli {
 }
 
 fn main() -> anyhow::Result<()> {
+    env_logger::init();
     let args = Cli::parse();
 
     let mut merger = ZipMerger::new();
